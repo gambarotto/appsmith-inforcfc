@@ -19,15 +19,16 @@ import "tinymce/plugins/fullscreen";
 import "tinymce/plugins/emoticons";
 import "tinymce/plugins/emoticons/js/emojis";
 import "tinymce/themes/silver";
+import "tinymce-i18n/langs/pt_BR";
 import "tinymce/skins/ui/oxide/skin.min.css";
 import "tinymce/models/dom";
-import "tinymce/plugins/help/js/i18n/keynav/en.js";
 import React, { useRef, useCallback, useEffect, useState } from "react";
 import styled, { createGlobalStyle } from "styled-components";
 import { Editor } from "@tinymce/tinymce-react";
 import type { LabelPosition } from "components/constants";
 import type { Alignment } from "@blueprintjs/core";
 import type { TextSize } from "constants/WidgetConstants";
+import { registerHelpKeynavResources } from "./tinymceHelpKeynav";
 
 // @ts-expect-error: loader types not available
 import cssVariables from "!!raw-loader!theme/wds.css";
@@ -36,6 +37,8 @@ import LabelWithTooltip, {
   labelLayoutStyles,
   LABEL_CONTAINER_CLASS,
 } from "widgets/components/LabelWithTooltip";
+
+registerHelpKeynavResources();
 
 const StyledRTEditor = styled.div<{
   borderRadius: string;
@@ -427,6 +430,19 @@ function RichtextEditorComponent(props: RichtextEditorComponentProps) {
             menubar: false,
             toolbar_mode: "sliding",
             forced_root_block: "p",
+            language: "pt_BR",
+            block_formats:
+              "Parágrafo=p; Cabeçalho 1=h1; Cabeçalho 2=h2; Cabeçalho 3=h3; Cabeçalho 4=h4; Cabeçalho 5=h5; Cabeçalho 6=h6; Pré-formatado=pre",
+            style_formats: [
+              { title: "Parágrafo", format: "p" },
+              { title: "Cabeçalho 1", format: "h1" },
+              { title: "Cabeçalho 2", format: "h2" },
+              { title: "Cabeçalho 3", format: "h3" },
+              { title: "Cabeçalho 4", format: "h4" },
+              { title: "Cabeçalho 5", format: "h5" },
+              { title: "Cabeçalho 6", format: "h6" },
+              { title: "Pré-formatado", format: "pre" },
+            ],
             branding: false,
             resize: false,
             browser_spellcheck: true,

@@ -15,7 +15,7 @@ export const Search = (props: SearchProps) => {
     <TextField
       excludeFromTabOrder={excludeFromTabOrder}
       onChange={onSearch}
-      placeholder="Search..."
+      placeholder="Pesquisar..."
       size="small"
       value={searchKey}
     />

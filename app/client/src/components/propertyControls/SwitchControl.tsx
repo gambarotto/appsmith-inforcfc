@@ -52,6 +52,7 @@ class SwitchControl extends BaseControl<ControlProps> {
     return (
       <SwitchContainer ref={this.containerRef}>
         <Switch
+          aria-label={this.props.label || this.props.propertyName}
           className={this.props.propertyValue ? "checked" : "unchecked"}
           isSelected={this.props.propertyValue}
           onChange={this.onToggle}

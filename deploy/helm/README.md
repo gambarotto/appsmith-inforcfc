@@ -195,7 +195,7 @@ To change Appsmith configurations, you can use configuration UI in application o
 | `applicationConfig.APPSMITH_ENCRYPTION_SALT`						| `""`									|
 | `applicationConfig.APPSMITH_CUSTOM_DOMAIN`							| `""`									|
 | `applicationConfig.APPSMITH_FORM_LOGIN_DISABLED`        | `""`                  |
-| `applicationConfig.APPSMITH_SIGNUP_DISABLED`            | `""`                  |
+| `applicationConfig.APPSMITH_SIGNUP_DISABLED`            | `"true"`              |
 
 For example, to change the encryption salt configuration, you can run the following command:
 ```

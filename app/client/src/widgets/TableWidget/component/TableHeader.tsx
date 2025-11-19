@@ -169,7 +169,7 @@ function TableHeader(props: TableHeaderProps) {
         >
           <SearchComponent
             onSearch={props.searchTableData}
-            placeholder="Search..."
+            placeholder="Pesquisar..."
             value={props.searchKey}
           />
         </SearchComponentWrapper>

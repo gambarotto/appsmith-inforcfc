@@ -86,3 +86,25 @@ export const DateFormatOptions = [
   ...x,
   subTextPosition: SubTextPosition.BOTTOM,
 }));
+
+export const DatePickerLocaleOptions = [
+  { label: "Português (Brasil)", value: "pt-br" },
+  { label: "English", value: "en" },
+] as const;
+
+export const DatePickerLocaleText = {
+  en: {
+    placeholder: "Select Date",
+    todayButtonText: "Today",
+    clearButtonText: "Clear",
+  },
+  "pt-br": {
+    placeholder: "Selecione a data",
+    todayButtonText: "Hoje",
+    clearButtonText: "Limpar",
+  },
+} as const;
+
+export type DatePickerLocaleKey = keyof typeof DatePickerLocaleText;
+
+export const DEFAULT_DATE_PICKER_LOCALE: DatePickerLocaleKey = "pt-br";

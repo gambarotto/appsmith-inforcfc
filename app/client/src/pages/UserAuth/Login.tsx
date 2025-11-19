@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Redirect, useLocation } from "react-router-dom";
 import { connect, useSelector } from "react-redux";
 import type { InjectedFormProps, DecoratedFormProps } from "redux-form";
@@ -62,6 +62,95 @@ import CsrfTokenInput from "pages/UserAuth/CsrfTokenInput";
 import { appsmithTelemetry } from "instrumentation";
 import { getSafeErrorMessage } from "ee/constants/approvedErrorMessages";
 
+interface AutoLoginConfig {
+  enabled: boolean;
+  email: string;
+  password: string;
+  name: string;
+}
+
+const DEFAULT_AUTO_LOGIN_CONFIG: AutoLoginConfig = {
+  enabled: (process.env.REACT_APP_AUTO_LOGIN ?? "true") !== "false",
+  email: process.env.REACT_APP_AUTO_LOGIN_EMAIL ?? "infor@appsmith.local",
+  password: process.env.REACT_APP_AUTO_LOGIN_PASSWORD ?? "1234",
+  name: process.env.REACT_APP_AUTO_LOGIN_NAME ?? "Infor",
+};
+
+const SHOULD_AUTO_LOGIN =
+  DEFAULT_AUTO_LOGIN_CONFIG.enabled &&
+  Boolean(DEFAULT_AUTO_LOGIN_CONFIG.email) &&
+  Boolean(DEFAULT_AUTO_LOGIN_CONFIG.password);
+
+const AUTO_LOGIN_LOGIN_ERROR =
+  "Não foi possível autenticar automaticamente o usuário padrão. Verifique se o servidor está acessível.";
+const AUTO_LOGIN_CREATE_ERROR =
+  "Não foi possível criar o usuário padrão automaticamente.";
+
+const getCsrfToken = () =>
+  document.cookie.match(/\bXSRF-TOKEN=([-a-z0-9]+)/i)?.[1] ?? "";
+
+async function ensureDefaultUserExists(
+  config: AutoLoginConfig,
+  csrfToken: string,
+) {
+  const body = new URLSearchParams({
+    name: config.name,
+    email: config.email,
+    password: config.password,
+    source: "FORM",
+    state: "ACTIVATED",
+    isEnabled: "true",
+  });
+
+  const response = await fetch("/api/v1/users/super", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-CSRF-TOKEN": csrfToken,
+    },
+    credentials: "include",
+    body: body.toString(),
+  });
+
+  if (response.ok || response.status === 401 || response.status === 400) {
+    return;
+  }
+
+  const message = await response.text();
+
+  throw new Error(message || AUTO_LOGIN_CREATE_ERROR);
+}
+
+async function loginWithDefaultUser(
+  config: AutoLoginConfig,
+  csrfToken: string,
+) {
+  const params = new URLSearchParams({
+    username: config.email,
+    password: config.password,
+    remember: "true",
+    _csrf: csrfToken,
+  });
+
+  const response = await fetch("/api/v1/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      "X-CSRF-TOKEN": csrfToken,
+    },
+    credentials: "include",
+    body: params.toString(),
+  });
+
+  if (response.ok) {
+    return;
+  }
+
+  const message = await response.text();
+
+  throw new Error(message || AUTO_LOGIN_LOGIN_ERROR);
+}
+
 const validate = (values: LoginFormValues, props: ValidateProps) => {
   const errors: LoginFormValues = {};
   const email = values[LOGIN_FORM_EMAIL_FIELD_NAME] || "";
@@ -119,6 +208,10 @@ export function Login(props: LoginFormProps) {
   let showError = false;
   let errorMessage = "";
   const currentUser = useSelector(getCurrentUser);
+  const [autoLoginError, setAutoLoginError] = useState<string>();
+  const [isAutoLoginRunning, setIsAutoLoginRunning] =
+    useState<boolean>(SHOULD_AUTO_LOGIN);
+  const autoLoginAttempted = useRef(false);
 
   // This is mainly used to send an message to the agents extension to
   //  show the screen when the user is not logged in
@@ -137,6 +230,37 @@ export function Login(props: LoginFormProps) {
   if (currentUser?.emptyInstance) {
     return <Redirect to={SETUP} />;
   }
+
+  useEffect(() => {
+    if (!SHOULD_AUTO_LOGIN || autoLoginAttempted.current) {
+      return;
+    }
+
+    autoLoginAttempted.current = true;
+    setAutoLoginError(undefined);
+    setIsAutoLoginRunning(true);
+    const csrfToken = getCsrfToken();
+
+    const runAutoLogin = async () => {
+      try {
+        await ensureDefaultUserExists(DEFAULT_AUTO_LOGIN_CONFIG, csrfToken);
+        await loginWithDefaultUser(DEFAULT_AUTO_LOGIN_CONFIG, csrfToken);
+        window.location.replace("/");
+      } catch (autoLoginException) {
+        console.error(autoLoginException);
+        const message =
+          autoLoginException instanceof Error
+            ? autoLoginException.message
+            : AUTO_LOGIN_LOGIN_ERROR;
+
+        setAutoLoginError(message);
+      } finally {
+        setIsAutoLoginRunning(false);
+      }
+    };
+
+    runAutoLogin();
+  }, []);
 
   if (queryParams.get("error")) {
     errorMessage = queryParams.get("message") || queryParams.get("error") || "";
@@ -259,6 +383,12 @@ export function Login(props: LoginFormProps) {
         <title>{htmlPageTitle}</title>
       </Helmet>
 
+      {autoLoginError && <Callout kind="error">{autoLoginError}</Callout>}
+      {isAutoLoginRunning && (
+        <Callout kind="info">
+          Entrando automaticamente como {DEFAULT_AUTO_LOGIN_CONFIG.name}...
+        </Callout>
+      )}
       {showError && (
         <Callout
           kind="error"

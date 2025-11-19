@@ -1,0 +1,35 @@
+# Dockerfile de Desenvolvimento - RTS (Runtime Service)
+# NOTA: RTS usa Yarn Workspaces, precisa do contexto do client
+
+FROM node:20-alpine
+
+LABEL maintainer="Appsmith Dev Team"
+LABEL description="Runtime Service para desenvolvimento"
+
+# Instalar dependências do sistema
+RUN apk add --no-cache \
+    curl \
+    bash
+
+# Criar diretório de trabalho
+WORKDIR /app
+
+# Copiar tudo do client (Yarn Workspaces precisa de todos os packages)
+# Nota: .dockerignore vai excluir node_modules, build, etc
+COPY . .
+
+# Instalar dependências do workspace
+RUN yarn install
+
+# Porta do RTS
+EXPOSE 8091
+
+# Mudar para diretório do RTS
+WORKDIR /app/packages/rts
+
+# Script de inicialização
+COPY packages/rts/docker-entrypoint-dev.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint-dev.sh
+
+ENTRYPOINT ["docker-entrypoint-dev.sh"]
+

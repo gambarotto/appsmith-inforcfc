@@ -1,0 +1,35 @@
+# Dockerfile de Build de Produção - Frontend React
+# Este Dockerfile faz o build estático do frontend (menos memória)
+
+FROM node:20-alpine
+
+LABEL maintainer="Appsmith Dev Team"
+LABEL description="Frontend React para desenvolvimento (build estático)"
+
+# Habilitar Corepack para Yarn 3.x
+RUN corepack enable
+
+# Criar diretório de trabalho
+WORKDIR /app
+
+# Copiar todo o contexto do client (Yarn Workspaces)
+COPY . .
+
+# Instalar dependências
+RUN yarn install --immutable
+
+# Fazer o build de produção
+RUN yarn build
+
+# Instalar servidor HTTP simples
+RUN yarn global add serve
+
+# Porta do servidor
+EXPOSE 3000
+
+# Script de inicialização
+COPY docker-entrypoint-prod.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint-prod.sh
+
+ENTRYPOINT ["docker-entrypoint-prod.sh"]
+

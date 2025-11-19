@@ -1,0 +1,222 @@
+version: '3.8'
+
+# Docker Compose para Ambiente de Desenvolvimento Appsmith
+# Todos os serviços rodando em containers
+
+services:
+  # ============================================================================
+  # MongoDB - Banco de dados principal
+  # ============================================================================
+  mongodb:
+    image: mongo:5.0
+    container_name: appsmith-dev-mongodb
+    hostname: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: appsmith
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    command: mongod --replSet rs0
+    healthcheck:
+      test: |
+        mongosh --quiet --eval "
+        try {
+          rs.status();
+          db.adminCommand('ping');
+        } catch(e) {
+          rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'mongodb:27017'}]});
+        }
+        " || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - appsmith-network
+
+  # ============================================================================
+  # Redis - Cache e sessões
+  # ============================================================================
+  redis:
+    image: redis:6-alpine
+    container_name: appsmith-dev-redis
+    hostname: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - appsmith-network
+
+  # ============================================================================
+  # Backend - Spring Boot API
+  # ============================================================================
+  backend:
+    build:
+      context: ./app/server
+      dockerfile: Dockerfile.dev
+    container_name: appsmith-dev-backend
+    hostname: backend
+    ports:
+      - "8080:8080"
+    environment:
+      # MongoDB
+      APPSMITH_MONGODB_URI: mongodb://mongodb:27017/appsmith
+      APPSMITH_DB_URL: mongodb://mongodb:27017/appsmith
+
+      # Redis
+      APPSMITH_REDIS_URL: redis://redis:6379
+
+      # Security
+      APPSMITH_ENCRYPTION_PASSWORD: ${APPSMITH_ENCRYPTION_PASSWORD:-password}
+      APPSMITH_ENCRYPTION_SALT: ${APPSMITH_ENCRYPTION_SALT:-salt}
+
+      # Git Storage
+      APPSMITH_GIT_ROOT: /appsmith-stacks/git-storage
+
+      # Server Config
+      SERVER_PORT: 8080
+      APPSMITH_IS_SELF_HOSTED: "false"
+
+      # Java Options (memória + PF4J dev mode)
+      JAVA_TOOL_OPTIONS: "-Xmx2g -Dpf4j.mode=development -Dpf4j.pluginsDir=/app/appsmith-plugins"
+
+      # Logging
+      APPSMITH_LOG_LEVEL: info
+    volumes:
+      - ./app/server:/app
+      - git_storage:/appsmith-stacks/git-storage
+      - maven_cache:/root/.m2
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/users/me"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - appsmith-network
+
+  # ============================================================================
+  # RTS - Runtime Service
+  # ============================================================================
+  # NOTA: RTS usa Yarn Workspaces, então precisa do contexto do client inteiro
+  rts:
+    build:
+      context: ./app/client
+      dockerfile: packages/rts/Dockerfile.dev
+    container_name: appsmith-dev-rts
+    hostname: rts
+    ports:
+      - "8091:8091"
+    environment:
+      APPSMITH_API_BASE_URL: http://backend:8080/api/v1
+      PORT: 8091
+      HOST: 0.0.0.0
+      NODE_ENV: development
+    volumes:
+      - ./app/client/packages/rts:/app/packages/rts
+      - client_node_modules:/app/node_modules
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8091"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - appsmith-network
+
+  # ============================================================================
+  # Frontend - React Application
+  # ============================================================================
+  frontend:
+    build:
+      context: ./app/client
+      dockerfile: Dockerfile.dev
+    container_name: appsmith-dev-frontend
+    hostname: frontend
+    ports:
+      - "3000:3000"
+    # Aumentar memória disponível para o Webpack
+    mem_limit: 8g
+    memswap_limit: 8g
+    environment:
+      REACT_APP_BACKEND_URL: http://localhost:8080
+      REACT_APP_RTS_URL: http://localhost:8091
+      PORT: 3000
+      WATCHPACK_POLLING: "true"  # Para hot-reload funcionar
+      CHOKIDAR_USEPOLLING: "true"
+      # Otimizar uso de memória do Node.js
+      NODE_OPTIONS: "--max-old-space-size=3072"  # 3GB para o Node
+    volumes:
+      - ./app/client:/app
+      - client_node_modules:/app/node_modules
+    depends_on:
+      - backend
+      - rts
+    networks:
+      - appsmith-network
+
+  # ============================================================================
+  # Nginx - Proxy Reverso
+  # ============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: appsmith-dev-nginx
+    hostname: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - frontend
+      - backend
+      - rts
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - appsmith-network
+
+# ==============================================================================
+# Volumes para Persistência de Dados
+# ==============================================================================
+volumes:
+  mongodb_data:
+    name: appsmith-dev-mongodb-data
+  redis_data:
+    name: appsmith-dev-redis-data
+  git_storage:
+    name: appsmith-dev-git-storage
+  maven_cache:
+    name: appsmith-dev-maven-cache
+  client_node_modules:
+    name: appsmith-dev-client-node-modules
+  rts_node_modules:
+    name: appsmith-dev-rts-node-modules
+
+# ==============================================================================
+# Network
+# ==============================================================================
+networks:
+  appsmith-network:
+    name: appsmith-dev-network
+    driver: bridge
+

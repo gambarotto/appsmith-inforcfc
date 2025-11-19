@@ -1,0 +1,46 @@
+# Dockerfile de Desenvolvimento - Backend Spring Boot
+
+FROM maven:3.8-openjdk-17-slim
+
+LABEL maintainer="Appsmith Dev Team"
+LABEL description="Backend Spring Boot para desenvolvimento"
+
+# Instalar dependências necessárias
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    netcat-openbsd \
+    socat \
+    && rm -rf /var/lib/apt/lists/*
+
+# Criar diretório de trabalho
+WORKDIR /app
+
+# Copiar arquivos de configuração do Maven primeiro (para cache)
+COPY pom.xml ./
+COPY appsmith-interfaces/pom.xml ./appsmith-interfaces/
+COPY appsmith-plugins/pom.xml ./appsmith-plugins/
+COPY appsmith-server/pom.xml ./appsmith-server/
+COPY reactive-caching/pom.xml ./reactive-caching/
+COPY appsmith-git/pom.xml ./appsmith-git/
+
+# Download de dependências (camada cacheada)
+RUN mvn dependency:go-offline -B || true
+
+# Copiar código fonte
+COPY . .
+
+# Criar diretórios necessários
+RUN mkdir -p /appsmith-stacks/git-storage
+
+# Porta do servidor
+EXPOSE 8080
+# Porta de debug
+EXPOSE 5005
+
+# Script de inicialização
+COPY docker-entrypoint-dev.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint-dev.sh
+
+ENTRYPOINT ["docker-entrypoint-dev.sh"]
+

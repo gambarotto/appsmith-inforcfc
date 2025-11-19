@@ -141,7 +141,7 @@ function Actions() {
         >
           <SearchComponent
             onSearch={searchTableData}
-            placeholder="Search..."
+            placeholder="Pesquisar..."
             value={searchKey}
           />
         </SearchComponentWrapper>
@@ -180,7 +180,7 @@ function Actions() {
                 icon="add"
                 selectMenu={onAddNewRow}
                 selected={false}
-                title="Add new row"
+                title="Adicionar Nova Linha"
                 width={12}
               />
             )}

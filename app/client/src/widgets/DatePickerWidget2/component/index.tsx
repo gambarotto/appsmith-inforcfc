@@ -5,8 +5,10 @@ import type { IRef, Alignment } from "@blueprintjs/core";
 import { ControlGroup, Classes } from "@blueprintjs/core";
 import type { ComponentProps } from "widgets/BaseComponent";
 import { DateInput } from "@blueprintjs/datetime";
+import MomentLocaleUtils from "react-day-picker/moment";
 import moment from "moment";
 import "@blueprintjs/datetime/lib/css/blueprint-datetime.css";
+import "moment/locale/pt-br";
 import type { DatePickerType } from "../constants";
 import { TimePrecision } from "../constants";
 import type { TextSize } from "constants/WidgetConstants";
@@ -18,6 +20,11 @@ import {
   DATE_WIDGET_DEFAULT_VALIDATION_ERROR,
 } from "ee/constants/messages";
 import { LabelPosition } from "components/constants";
+import {
+  DatePickerLocaleText,
+  DEFAULT_DATE_PICKER_LOCALE,
+  type DatePickerLocaleKey,
+} from "../widget/constants";
 import { parseDate } from "./utils";
 import { lightenColor, PopoverStyles } from "widgets/WidgetUtils";
 import LabelWithTooltip, {
@@ -211,6 +218,9 @@ class DatePickerComponent extends React.Component<
       labelWidth,
     } = this.props;
 
+    const localeConfig = this.getLocaleConfig();
+    const localeKey = localeConfig.key;
+
     const now = moment();
     const year = now.get("year");
     const minDate = this.props.minDate
@@ -374,6 +384,8 @@ class DatePickerComponent extends React.Component<
               closeOnSelection={this.props.closeOnSelection}
               dayPickerProps={{
                 firstDayOfWeek: this.props.firstDayOfWeek || 0,
+                locale: localeKey,
+                localeUtils: MomentLocaleUtils,
               }}
               disabled={this.props.isDisabled}
               formatDate={this.formatDate}
@@ -383,11 +395,12 @@ class DatePickerComponent extends React.Component<
                 onFocus: () => this.props.onFocus?.(),
                 onBlur: () => this.props.onBlur?.(),
               }}
+              locale={localeKey}
               maxDate={maxDate}
               minDate={minDate}
               onChange={this.onDateSelected}
               parseDate={this.parseDate}
-              placeholder={"Select Date"}
+              placeholder={localeConfig.placeholder}
               popoverProps={{
                 portalContainer:
                   document.getElementById(CANVAS_ART_BOARD) || undefined,
@@ -403,6 +416,8 @@ class DatePickerComponent extends React.Component<
                 */
                 ...this.getConditionalPopoverProps(this.props),
               }}
+              todayButtonText={localeConfig.todayButtonText}
+              clearButtonText={localeConfig.clearButtonText}
               shortcuts={this.props.shortcuts}
               showActionsBar
               timePrecision={
@@ -463,8 +478,9 @@ class DatePickerComponent extends React.Component<
 
   formatDate = (date: Date): string => {
     const dateFormat = this.props.dateFormat || ISO_DATE_FORMAT;
+    const localeKey = this.getLocaleKey();
 
-    return moment(date).format(dateFormat);
+    return moment(date).locale(localeKey).format(dateFormat);
   };
 
   parseDate = (dateStr: string): Date | null => {
@@ -474,10 +490,30 @@ class DatePickerComponent extends React.Component<
       return null;
     } else {
       const dateFormat = this.props.dateFormat || ISO_DATE_FORMAT;
+      const localeKey = this.getLocaleKey();
 
-      return parseDate(dateStr, dateFormat);
+      return parseDate(dateStr, dateFormat, localeKey);
     }
   };
+
+  private getLocaleKey(): DatePickerLocaleKey {
+    const incoming = (this.props.locale || DEFAULT_DATE_PICKER_LOCALE).toLowerCase();
+
+    if (Object.prototype.hasOwnProperty.call(DatePickerLocaleText, incoming)) {
+      return incoming as DatePickerLocaleKey;
+    }
+
+    return DEFAULT_DATE_PICKER_LOCALE;
+  }
+
+  private getLocaleConfig() {
+    const key = this.getLocaleKey();
+
+    return {
+      key,
+      ...DatePickerLocaleText[key],
+    };
+  }
 
   /**
    * checks if selelectedDate is null or not,
@@ -535,6 +571,7 @@ interface DatePickerComponentProps extends ComponentProps {
   isPopoverOpen?: boolean;
   onDateOutOfRange?: () => void;
   isRequired?: boolean;
+  locale?: string;
 }
 
 interface DatePickerComponentState {

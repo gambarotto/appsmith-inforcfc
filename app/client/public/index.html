@@ -20,16 +20,21 @@
       <script>
         // '' (empty strings), 'false' are falsy
         // could return either boolean or string based on value
-        const parseConfig = (config) => {
-          if (
-            (config.startsWith("{") && config.startsWith("}")) ||
-            config.indexOf("__") === 0 ||
-            config.indexOf("$") === 0 ||
-            config.indexOf("%") === 0
-          )
-            return "";
-
+        const parseConfig = (config = "") => {
           const result = config.trim();
+          const isTemplatePlaceholder =
+            (result.startsWith("{") && result.endsWith("}")) ||
+            (result.startsWith("{{") && result.endsWith("}}"));
+
+          if (
+            isTemplatePlaceholder ||
+            result.indexOf("__") === 0 ||
+            result.indexOf("$") === 0 ||
+            result.indexOf("%") === 0
+          ) {
+            return "";
+          }
+
           if (result.toLowerCase() === "false" || result === "") {
             return false;
           } else if (result.toLowerCase() === "true") {

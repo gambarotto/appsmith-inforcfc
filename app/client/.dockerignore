@@ -1,4 +1,10 @@
-.git
-.idea
 node_modules
-build.tgz
+build
+dist
+*.log
+.env
+.env.*
+coverage
+cypress/videos
+cypress/screenshots
+.cache

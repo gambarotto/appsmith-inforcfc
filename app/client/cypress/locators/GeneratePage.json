@@ -25,5 +25,5 @@
   "uploadFilesS3": "div.uppy-Dashboard-AddFiles input",
   "uploadBtn": "button.uppy-StatusBar-actionBtn--upload",
   "selectedRow": ".tr.selected-row",
-  "searchinTable": "//input[@placeholder='Search...']"
+  "searchinTable": "//input[@placeholder='Pesquisar']"
 }

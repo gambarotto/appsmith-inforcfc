@@ -43,7 +43,7 @@ function AddNewRowBannerComponent(props: AddNewRowBannerType) {
 
   return (
     <Container>
-      <Title>Add New Row</Title>
+      <Title>Adicionar Nova Linha</Title>
       <ActionContainer>
         <BaseButton
           borderRadius={props.borderRadius}

@@ -46,3 +46,9 @@ mongo-data**
 # ignore the task file as it will be different for different project implementations.
 TASKS.md
 mongodb*
+
+# Development scripts artifacts
+.appsmith-dev-pids
+logs/
+data/mongodb/
+.env.dev

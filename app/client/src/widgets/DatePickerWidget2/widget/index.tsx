@@ -19,7 +19,11 @@ import {
 } from "widgets/WidgetUtils";
 import type { DatePickerType } from "../constants";
 import { TimePrecision } from "../constants";
-import { DateFormatOptions } from "./constants";
+import {
+  DateFormatOptions,
+  DatePickerLocaleOptions,
+  DEFAULT_DATE_PICKER_LOCALE,
+} from "./constants";
 import derivedProperties from "./parseDerivedProperties";
 import { isAutoLayout } from "layoutSystems/autolayout/utils/flexWidgetUtils";
 import type {
@@ -112,6 +116,7 @@ class DatePickerWidget extends BaseWidget<DatePickerWidget2Props, WidgetState> {
       animateLoading: true,
       responsiveBehavior: ResponsiveBehavior.Fill,
       minWidth: FILL_WIDGET_MIN_WIDTH,
+      locale: DEFAULT_DATE_PICKER_LOCALE,
     };
   }
 
@@ -293,6 +298,19 @@ class DatePickerWidget extends BaseWidget<DatePickerWidget2Props, WidgetState> {
                 default: TimePrecision.MINUTE,
               },
             },
+          },
+          {
+            helpText: "Defines the locale used to render the calendar",
+            propertyName: "locale",
+            label: "Locale",
+            controlType: "DROP_DOWN",
+            optionWidth: "340px",
+            options: DatePickerLocaleOptions,
+            defaultValue: DEFAULT_DATE_PICKER_LOCALE,
+            isJSConvertible: true,
+            isBindProperty: true,
+            isTriggerProperty: false,
+            validation: { type: ValidationTypes.TEXT },
           },
         ],
       },
@@ -685,6 +703,7 @@ class DatePickerWidget extends BaseWidget<DatePickerWidget2Props, WidgetState> {
         dateFormat={this.props.dateFormat}
         datePickerType="DATE_PICKER"
         firstDayOfWeek={this.props.firstDayOfWeek}
+        locale={this.props.locale}
         isDisabled={this.props.isDisabled}
         isDynamicHeightEnabled={isAutoHeightEnabledForWidget(this.props)}
         isLoading={this.props.isLoading}
@@ -753,6 +772,7 @@ export interface DatePickerWidget2Props extends WidgetProps {
   formattedDate: string;
   isDisabled: boolean;
   dateFormat: string;
+  locale?: string;
   label: string;
   labelPosition?: LabelPosition;
   labelAlignment?: Alignment;

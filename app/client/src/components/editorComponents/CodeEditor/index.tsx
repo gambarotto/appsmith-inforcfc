@@ -320,6 +320,9 @@ class CodeEditor extends Component<Props, State> {
     };
     this.updatePropertyValue = this.updatePropertyValue.bind(this);
     this.focusEditor = this.focusEditor.bind(this);
+    const initialScript = props.input.value ?? "";
+    const shouldInitializePeekOverlay =
+      props.mode === EditorModes.JAVASCRIPT || isDynamicValue(initialScript);
     this.peekOverlayExpressionIdentifier = new PeekOverlayExpressionIdentifier(
       props.isJSObject
         ? {
@@ -329,7 +332,7 @@ class CodeEditor extends Component<Props, State> {
         : {
             sourceType: SourceType.script,
           },
-      props.input.value,
+      shouldInitializePeekOverlay ? initialScript : undefined,
     );
     this.multiplexConfig = MULTIPLEXING_MODE_CONFIGS[this.props.mode];
     /**
@@ -819,6 +822,11 @@ class CodeEditor extends Component<Props, State> {
   };
 
   updateScriptForPeekOverlay = (chIndex: number) => {
+    if (!this.isPeekOverlayEnabled()) {
+      this.peekOverlayExpressionIdentifier.clearScript();
+      return chIndex;
+    }
+
     if (
       !this.peekOverlayExpressionIdentifier.hasParsedScript() ||
       this.multiplexConfig
@@ -846,6 +854,17 @@ class CodeEditor extends Component<Props, State> {
     return chIndex;
   };
 
+  isPeekOverlayEnabled = () => {
+    if (this.props.mode === EditorModes.JAVASCRIPT) {
+      return true;
+    }
+
+    const value =
+      (this.editor && this.editor.getValue()) || this.props.input.value || "";
+
+    return isDynamicValue(value);
+  };
+
   isPathLibrary = (paths: string[]) => {
     return !!this.props.installedLibraries.find((installedLib) =>
       installedLib.accessor.find((accessor) => accessor === paths[0]),
@@ -853,6 +872,10 @@ class CodeEditor extends Component<Props, State> {
   };
 
   handleMouseOver = (event: MouseEvent) => {
+    if (!this.isPeekOverlayEnabled()) {
+      return;
+    }
+
     const tokenElement = event.target;
     const rect = (tokenElement as Element).getBoundingClientRect();
 

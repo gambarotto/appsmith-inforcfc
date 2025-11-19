@@ -20,15 +20,15 @@
     "env": {
       "APPSMITH_DB_URL": {
         "description": "Your Mongo Database URI. Since Heroku doesn't support a managed MongoDB instance, you'll have to create a Mongo DB instance on another service such as https://cloud.mongodb.com",
-        "value": ""
+        "value": "mongodb://appsmith:S3nh@Fort3!@appsmith-mongo:27017/appsmith"
       },
       "APPSMITH_ENCRYPTION_PASSWORD": {
         "description": "Encryption password to encrypt all sensitive credentials in the database. You can use any random string (Eg. abcd). The more random, the better.",
-        "value": ""
+        "value": "t7YpWQmP6J4sR9nLz3V2aXhC1eG8uK5d"
       },
       "APPSMITH_ENCRYPTION_SALT": {
         "description" : "Encryption salt used to encrypt all sensitive credentials in the database. You can use any random string (Eg. abcd). The more random, the better.",
-        "value": ""
+        "value": "Q8rS1vN6yB3wF0pL5tZ2kD7hX4gJ9cM1"
       },
       "APPSMITH_DISABLE_TELEMETRY": {
         "description" : "We want to be transparent and request that you share anonymous usage data with us. This data is purely statistical in nature and helps us understand your needs & provide better support to your self-hosted instance. You can read more about what information is collected in our documentation https://docs.appsmith.com/product/telemetry",
