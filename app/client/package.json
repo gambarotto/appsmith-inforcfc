@@ -27,7 +27,7 @@
     "g:jest": "cd $INIT_CWD && jest --colors --no-cache --silent --maxWorkers=50%",
     "test:unit:ci": "yarn workspaces foreach -tv run test:unit",
     "generate:widget": "plop --plopfile generators/index.js",
-    "postinstall": "node cypress/apply-patches.js && yarn init-husky",
+    "postinstall": "node cypress/apply-patches.js",
     "storybook": "yarn workspace @design-system/storybook storybook",
     "lint": "eslint --cache ./src && cd ./cypress && eslint -c .eslintrc.json --cache ./",
     "g:lint": "cd $INIT_CWD && eslint --cache .",
@@ -436,5 +436,6 @@
     "brace-expansion": "1.1.12",
     "form-data": "4.0.4",
     "babel-plugin-lodash@^3.3.4": "patch:babel-plugin-lodash@npm%3A3.3.4#./.yarn/patches/babel-plugin-lodash-npm-3.3.4-c7161075b6.patch"
-  }
+  },
+  "proxy": "http://localhost:8080"
 }

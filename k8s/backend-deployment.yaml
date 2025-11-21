@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: appsmith-backend
+  namespace: appsmith
+  labels:
+    app: appsmith-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: appsmith-backend
+  template:
+    metadata:
+      labels:
+        app: appsmith-backend
+    spec:
+      containers:
+      - name: backend
+        image: appsmith/appsmith-ce:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        # URL base da aplicação (importante para CORS e cookies)
+        - name: APPSMITH_CUSTOM_DOMAIN
+          value: "https://appsmith.com"
+
+        # MongoDB
+        - name: APPSMITH_MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: appsmith-secrets
+              key: mongodb-uri
+
+        # Redis
+        - name: APPSMITH_REDIS_URL
+          value: "redis://appsmith-redis:6379"
+
+        # Encryption (usar secrets em produção)
+        - name: APPSMITH_ENCRYPTION_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: appsmith-secrets
+              key: encryption-password
+        - name: APPSMITH_ENCRYPTION_SALT
+          valueFrom:
+            secretKeyRef:
+              name: appsmith-secrets
+              key: encryption-salt
+
+        # Outras configurações
+        - name: APPSMITH_DISABLE_TELEMETRY
+          value: "true"
+        - name: JAVA_OPTS
+          value: "-Xmx1g -Xms512m"
+
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          timeoutSeconds: 3
+

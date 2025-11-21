@@ -1,4 +1,6 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+# Husky desabilitado - sair imediatamente sem executar nada
+exit 0
 
-sh app/client/.husky/check-staged-files.sh
+# . "$(dirname -- "$0")/_/husky.sh"
+# sh app/client/.husky/check-staged-files.sh

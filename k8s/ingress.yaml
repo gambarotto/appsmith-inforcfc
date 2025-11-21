@@ -1,0 +1,75 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: appsmith-ingress
+  namespace: appsmith
+  annotations:
+    # Classe do Ingress Controller (ajuste conforme seu ambiente)
+    kubernetes.io/ingress.class: nginx
+    
+    # Certificado TLS (se usar cert-manager)
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    
+    # Redirecionar HTTP para HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    
+    # CORS (ajuste a origem conforme necessário)
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://appsmith.com"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, Authorization, X-CSRF-Token, X-XSRF-Token, X-Requested-With, X-Appsmith-Version, X-Requested-By"
+    
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    
+    # Body size (para uploads)
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+spec:
+  tls:
+  - hosts:
+    - appsmith.com
+    # Ajuste o nome do secret conforme seu certificado
+    secretName: appsmith-tls
+  rules:
+  - host: appsmith.com
+    http:
+      paths:
+      # Frontend - servir arquivos estáticos
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: appsmith-frontend
+            port:
+              number: 80
+      
+      # Backend - API
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: appsmith-backend
+            port:
+              number: 8080
+      
+      # Backend - OAuth2
+      - path: /oauth2
+        pathType: Prefix
+        backend:
+          service:
+            name: appsmith-backend
+            port:
+              number: 8080
+      
+      # Backend - Login
+      - path: /login
+        pathType: Prefix
+        backend:
+          service:
+            name: appsmith-backend
+            port:
+              number: 8080
+

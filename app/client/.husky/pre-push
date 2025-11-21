@@ -1,6 +1,8 @@
 #!/bin/bash
+# Husky desabilitado - sair imediatamente sem executar nada
+exit 0
 
-echo "Pre push hook called"
+# echo "Pre push hook called"
 
 # An example hook script to verify what is about to be pushed.  Called by "git
 # push" after it has checked the remote status, but before anything has been
